@@ -14,16 +14,26 @@ exports.getBusinessById = async (business_id) => {
 };
 
 
-exports.createBusiness = async (data) => {
-    const { lead_id, b_name, b_add, product, gst_no, mto } = data;
+// exports.createBusiness = async (data) => {
+//     const { lead_id, b_name, b_add, product, gst_no, mto } = data;
 
-    const [result] = await db.query(
-        'INSERT INTO business (lead_id, b_name, b_add, product, gst_no, mto) VALUES (?, ?, ?, ?, ?, ?)',
-        [lead_id, b_name, b_add, product, gst_no, mto]
-    );
+//     const [result] = await db.query(
+//         'INSERT INTO business (lead_id, b_name, b_add, product, gst_no, mto) VALUES (?, ?, ?, ?, ?, ?)',
+//         [lead_id, b_name, b_add, product, gst_no, mto]
+//     );
 
-    return { message: 'Business created', business_id: result.insertId };
+//     return { message: 'Business created', business_id: result.insertId };
+// };
+
+exports.createBusiness = async (data, conn = db) => {
+  const { lead_id, b_name, b_add, product, gst_no, mto } = data;
+  const [result] = await conn.query(
+    'INSERT INTO business (lead_id, b_name, b_add, product, gst_no, mto) VALUES (?, ?, ?, ?, ?, ?)',
+    [lead_id, b_name, b_add, product, gst_no, mto]
+  );
+  return { business_id: result.insertId };
 };
+
 
 exports.updateBusiness = async (business_id, data) => {
     const fields = [];

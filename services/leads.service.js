@@ -1,68 +1,91 @@
 const db = require('../config/db');
+const businessService = require('./business.service');
+const loanService = require('./loans.service');
+const guarantorService = require('./guarantor.service');
 
-const getAllLeads = async () => {
-    const [rows] = await db.query('SELECT * FROM leads');
-    return rows;
-};
+const createFullLead = async (data) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
 
-const getLeadById = async (lead_id) => {
-    const [rows] = await db.query('SELECT * FROM leads WHERE lead_id=?',[lead_id]);
-    if(rows.length === 0){
-        throw new Error('Lead not found');
-    }
-    return rows[0];
-}
+    const { first_name, last_name, mobile, pan_card, amount, type, business, loan, guarantor } = data;
 
-const createLead = async (data) => {
-    const { first_name, last_name, mobile, pan_card, amount, type } = data;
-    const sql = 'INSERT INTO leads (first_name, last_name, mobile, pan_card, amount, type) VALUES (?, ?, ?, ?, ?, ?)';
+    // 1. Insert into leads
+    const [leadResult] = await connection.query(
+      'INSERT INTO leads (first_name, last_name, mobile, pan_card, amount, type) VALUES (?, ?, ?, ?, ?, ?)',
+      [first_name, last_name, mobile, pan_card, amount, type]
+    );
+    const lead_id = leadResult.insertId;
 
-    const [result] = await db.query(sql, [first_name, last_name, mobile, pan_card, amount, type]);
-    const lead_id = result.insertId;
+    let guarantor_id = null;
 
+    // 2. Insert guarantor
     if (type === 'guarantor') {
-        const gSql = 'INSERT INTO guarantor (lead_id, first_name, last_name, mobile, pan_card) VALUES (?, ?, ?, ?, ?)';
-        await db.query(gSql, [lead_id, first_name, last_name, mobile, pan_card]);
-        return { message: 'Lead and Guarantor inserted', lead_id };
+      await guarantorService.createGuarantor({ lead_id, first_name, last_name, mobile, pan_card }, connection);
+    } else if (guarantor) {
+      await guarantorService.createGuarantor({ lead_id, ...guarantor }, connection);
     }
 
-    if (type === 'applicant') {
-        const cSql = 'INSERT INTO customer (lead_id, first_name, last_name, mobile, pan_card) VALUES (?, ?, ?, ?, ?)';
-        await db.query(cSql, [lead_id, first_name, last_name, mobile, pan_card]);
-        return { message: 'Lead and Customer inserted', lead_id };
+    // 3. Insert business
+    let business_id = null;
+    if (business) {
+      const result = await businessService.createBusiness({ lead_id, ...business }, connection);
+      business_id = result.business_id;
     }
 
-    return { message: 'Lead inserted (no associated role)', lead_id };
+    // 4. Insert loan
+    if (loan && business_id !== null) {
+      await loanService.createLoan({ lead_id, business_id, guarantor_id,...loan }, connection);
+    }
+
+    await connection.commit();
+    return { message: 'Lead and related data inserted successfully', lead_id };
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 };
 
+const getFullLeadById = async (lead_id) => {
+  const connection = await db.getConnection();
+  try {
+    // Get lead
+    const [leads] = await connection.query('SELECT * FROM leads WHERE lead_id = ?', [lead_id]);
+    if (leads.length === 0) return null;
+    const lead = leads[0];
 
-const updateLead = async (lead_id,data) =>{
-    const allowedFields = ['first_name', 'last_name', 'mobile', 'pan_card', 'amount', 'type'];
-    const fields = [];
-    const values = [];
+    // Get business
+    const [business] = await connection.query('SELECT * FROM business WHERE lead_id = ?', [lead_id]);
 
-    allowedFields.forEach((field) => {
-        if (data[field] !== undefined) {
-            fields.push(`${field}=?`);
-            values.push(data[field]);
-        }
-    });
+    // Get loan
+    const [loan] = await connection.query('SELECT * FROM loans WHERE lead_id = ?', [lead_id]);
 
-    if (fields.length === 0) {
-        throw new Error('No fields to update');
-    }
+    // Get guarantor
+    const [guarantor] = await connection.query('SELECT * FROM guarantor WHERE lead_id = ?', [lead_id]);
 
-    const sql = `UPDATE leads SET ${fields.join(', ')} WHERE lead_id=?`;
-    values.push(lead_id);
+    return {
+      ...lead,
+      business: business[0] || null,
+      loan: loan[0] || null,
+      guarantor: guarantor[0] || null
+    };
 
-    await db.query(sql, values);
+  } catch (err) {
+    throw err;
+  } finally {
+    connection.release();
+  }
+};
 
-    return { message: 'Lead updated' };
+const getLeadById = async (lead_id) =>{
+    const[rows] = await db.query('SELECT * FROM leads WHERE lead_id = ?',[lead_id]);
+    return rows[0] || null;
 }
 
-const deleteLead = async (lead_id) => {
-    await db.query('DELETE FROM leads WHERE lead_id=?', [lead_id]);
-    return { message: 'Lead deleted' };
+module.exports = {
+  createFullLead,
+  getFullLeadById,
+  getLeadById
 };
-
-module.exports = { getAllLeads,getLeadById,createLead,updateLead,deleteLead };

@@ -1,49 +1,22 @@
-const leadsService = require("../services/leads.service");
+const { createFullLead,getFullLeadById } = require('../services/leads.service');
 
-const getAllLeads = async (req,res) => {
-    try{
-        const leads = await leadsService.getAllLeads();
-        res.json(leads);
-    }catch(err){
-        res.status(500).send(err);
-    }
+exports.createLead = async (req, res) => {
+  try {
+    const result = await createFullLead(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Error creating lead:', error);
+    res.status(500).json({ error: 'Failed to create lead' });
+  }
 };
 
-const getLeadById = async (req,res) => {
-    try{
-        const lead = await leadsService.getLeadById(req.params.id);
-        res.json(lead);
-    }catch (err){
-        res.status(404).json({error: err.message});
-    }
+exports.getLeadById = async (req, res) => {
+  try {
+    const result = await getFullLeadById(req.params.id);
+    if (!result) return res.status(404).json({ error: 'Lead not found' });
+    res.json(result);
+  } catch (err) {
+    console.error('Error fetching lead:', err);
+    res.status(500).json({ error: 'Failed to fetch lead' });
+  }
 };
-
-const createLead = async (req,res) => {
-    try{
-        const result = await leadsService.createLead(req.body);
-        res.json(result);
-    }catch(err){
-        res.status(500).send(err);
-    }
-};
-
-const updateLead = async (req,res) => {
-    try{
-        const result = await leadsService.updateLead(req.params.id,req.body);
-        res.json(result);
-    }catch(err){
-        res.status(500).send(err);
-    }
-};
-
-const deleteLead = async (req,res) => {
-    try{
-        const result = await leadsService.deleteLead(req.params.id);
-        res.json(result);
-    }catch(err){
-        res.status(500).send(err);
-    }
-};
-
-
-module.exports = { getAllLeads,getLeadById, createLead,updateLead,deleteLead }

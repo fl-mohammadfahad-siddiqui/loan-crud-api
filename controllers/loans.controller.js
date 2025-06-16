@@ -11,7 +11,12 @@ exports.getAllLoans = async (req, res) => {
 
 exports.getLoanById = async (req, res) => {
     try {
-        const loan = await loanService.getLoanById(req.params.id);
+        const loan_id = req.params.id;
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const loan = await loanService.getFullLoanById(loan_id, baseUrl);
+        if (!loan) {
+            return res.status(404).json({ error: 'Loan not found' });
+        }
         res.json(loan);
     } catch (err) {
         res.status(404).json({ error: err.message });
