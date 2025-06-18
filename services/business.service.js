@@ -21,8 +21,8 @@ exports.getBusinessById = async (business_id) => {
         throw new Error('Business not found');
     }
     const business = rows[0];
-    const lead = await getLeadById(business.lead_id);
-    return{ ...business,lead }
+    // const lead = await getLeadById(business.lead_id);
+    return{ ...business}
 };
 
 

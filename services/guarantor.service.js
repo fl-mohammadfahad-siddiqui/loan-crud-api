@@ -19,8 +19,8 @@ exports.getGuarantorById = async (guarantor_id,conn=db) => {
     const [rows] = await db.query('SELECT * FROM guarantor WHERE guarantor_id = ?', [guarantor_id]);
     if (rows.length === 0) throw new Error('Guarantor not found');
     const guarantor = rows[0];
-    const lead = await getLeadById(guarantor.lead_id);
-    return{ ...guarantor,lead };
+    // const lead = await getLeadById(guarantor.lead_id);
+    return{ ...guarantor };
 };
 
 exports.createGuarantor = async (data,conn=db) => {

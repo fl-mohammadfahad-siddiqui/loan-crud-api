@@ -7,7 +7,18 @@ const validStatuses = ['approved', 'pending', 'rejected'];
 
 exports.getAllLoans = async () => {
     const [rows] = await db.query('SELECT * FROM loans');
-    return rows;
+    const enrichedRows = await Promise.all(
+        rows.map(async (loan) => {
+            const lead = await getLeadById(loan.lead_id);
+            const business = await businessService.getBusinessById(loan.business_id);
+            return{
+                ...loan,
+                lead,
+                business
+            };
+        })
+    );
+    return enrichedRows;
 };
 
 exports.getLoanById = async (loan_id) => {
