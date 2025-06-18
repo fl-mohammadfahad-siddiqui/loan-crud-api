@@ -1,14 +1,26 @@
 const db = require('../config/db');
+const { getLeadById } = require('./common/getLeadById');
 
 exports.getAllGuarantors = async () => {
     const [rows] = await db.query('SELECT * FROM guarantor');
-    return rows;
+    const enrichedRows = await Promise.all(
+        rows.map(async (guarantor) => {
+            const lead = await getLeadById(guarantor.lead_id);
+            return{
+                ...guarantor,
+                lead
+            };
+        })
+    );
+    return enrichedRows;
 };
 
-exports.getGuarantorById = async (data,conn=db) => {
+exports.getGuarantorById = async (guarantor_id,conn=db) => {
     const [rows] = await db.query('SELECT * FROM guarantor WHERE guarantor_id = ?', [guarantor_id]);
     if (rows.length === 0) throw new Error('Guarantor not found');
-    return rows[0];
+    const guarantor = rows[0];
+    const lead = await getLeadById(guarantor.lead_id);
+    return{ ...guarantor,lead };
 };
 
 exports.createGuarantor = async (data,conn=db) => {

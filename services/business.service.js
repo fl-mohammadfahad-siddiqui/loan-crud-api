@@ -1,8 +1,18 @@
 const db = require('../config/db');
+const { getLeadById } = require('./common/getLeadById')
 
 exports.getAllBusiness = async () => {
     const [rows] = await db.query('SELECT * FROM business');
-    return rows;
+    const enrichedRows = await Promise.all(
+        rows.map(async (business) => {
+            const lead = await getLeadById(business.lead_id);
+            return{
+                ...business,
+                lead
+            };
+        })
+    );
+    return enrichedRows;
 };
 
 exports.getBusinessById = async (business_id) => {
@@ -10,7 +20,9 @@ exports.getBusinessById = async (business_id) => {
     if (rows.length === 0) {
         throw new Error('Business not found');
     }
-    return rows[0];
+    const business = rows[0];
+    const lead = await getLeadById(business.lead_id);
+    return{ ...business,lead }
 };
 
 
