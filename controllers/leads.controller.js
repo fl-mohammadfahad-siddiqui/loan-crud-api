@@ -2,7 +2,9 @@ const { createFullLead,getFullLeadById } = require('../services/leads.service');
 
 exports.createLead = async (req, res) => {
   try {
-    const result = await createFullLead(req.body);
+    const data = JSON.parse(req.body.data);
+    const files = req.files || [];
+    const result = await createFullLead(data,files);
     res.status(201).json(result);
   } catch (error) {
     console.error('Error creating lead:', error);

@@ -1,9 +1,10 @@
 const db = require('../config/db');
 
-exports.uploadDocument = async (file, loan_id) => {
+exports.uploadDocument = async (file, loan_id, conn=db) => {
+  if (!loan_id || !file) throw new Error('Missing file or loan_id');
   const { filename: name, mimetype: type, size, path } = file;
 
-  const [result] = await db.query(
+  const [result] = await conn.query(
     'INSERT INTO documents (loan_id, name, type, size, path) VALUES (?, ?, ?, ?, ?)',
     [loan_id, name, type, size, path]
   );

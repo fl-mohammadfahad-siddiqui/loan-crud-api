@@ -2,8 +2,9 @@ const db = require('../config/db');
 const businessService = require('./business.service');
 const loanService = require('./loans.service');
 const guarantorService = require('./guarantor.service');
+const documentService = require('./documents.service');
 
-const createFullLead = async (data) => {
+const createFullLead = async (data,files) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -21,9 +22,11 @@ const createFullLead = async (data) => {
 
     // 2. Insert guarantor
     if (type === 'guarantor') {
-      await guarantorService.createGuarantor({ lead_id, first_name, last_name, mobile, pan_card }, connection);
+      const result = await guarantorService.createGuarantor({ lead_id, first_name, last_name, mobile, pan_card }, connection);
+      guarantor_id = result.guarantor_id;
     } else if (guarantor) {
-      await guarantorService.createGuarantor({ lead_id, ...guarantor }, connection);
+      const result = await guarantorService.createGuarantor({ lead_id, ...guarantor }, connection);
+      guarantor_id = result.guarantor_id;
     }
 
     // 3. Insert business
@@ -34,12 +37,21 @@ const createFullLead = async (data) => {
     }
 
     // 4. Insert loan
+    let loan_id = null;
     if (loan && business_id !== null) {
-      await loanService.createLoan({ lead_id, business_id, guarantor_id,...loan }, connection);
+      const result = await loanService.createLoan({ lead_id, business_id, guarantor_id, ...loan }, connection);
+      loan_id = result.loan_id;
+    }
+
+    //5. Upload Documents
+    if(files.length>0 && loan_id !== null){
+      for(const file of files){
+        await documentService.uploadDocument(file,loan_id,connection);
+      }
     }
 
     await connection.commit();
-    return { message: 'Lead and related data inserted successfully', lead_id };
+    return { message: 'Lead and related data inserted successfully', lead_id, loan_id };
   } catch (err) {
     await connection.rollback();
     throw err;

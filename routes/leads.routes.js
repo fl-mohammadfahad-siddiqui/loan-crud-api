@@ -5,9 +5,10 @@ const {getAllLeads,
     updateLead,
     deleteLead
 } = require("../controllers/leads.controller");
+const upload = require('../middlewares/upload');
 const leadsController = require('../controllers/leads.controller');
 const { getLeadById } = require('../services/leads.service');
-router.post('/', leadsController.createLead);
+router.post('/', upload.array('documents'), leadsController.createLead);
 router.get('/:id', leadsController.getLeadById);
 
 // router.route("/").get(getAllLeads);
