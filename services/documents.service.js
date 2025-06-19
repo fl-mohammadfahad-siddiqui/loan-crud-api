@@ -19,3 +19,16 @@ exports.getDocumentsByLoanId = async (loan_id) => {
   );
   return documents;
 };
+
+exports.uploadAll = async (files, loan_id, conn = db) => {
+  if (!loan_id || !files || files.length === 0) {
+    throw new Error('Missing loan_id or files');
+  }
+
+  for (const file of files) {
+    await exports.uploadDocument(file, loan_id, conn);
+  }
+
+  return { message: 'All documents uploaded successfully' };
+};
+

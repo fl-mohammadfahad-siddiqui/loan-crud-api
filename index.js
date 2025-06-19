@@ -3,12 +3,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const logger = require('./middlewares/logger');
 const documentsRoutes = require('./routes/documents.routes');
+const workflowRoutes = require('./routes/workflow.routes');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(logger);
 
-
+app.use('/api/workflow',workflowRoutes);
 app.use('/leads',require("./routes/leads.routes"));
 app.use('/loans',require('./routes/loans.routes'));
 app.use('/business',require('./routes/business.routes'));

@@ -1,5 +1,6 @@
 // services/ckyc.service.js
 const axios = require('axios');
+const db = require('../../config/db')
 
 const CKYC_API_URL = 'https://dqw6uizajg.execute-api.ap-south-1.amazonaws.com/mocks/ckyc/searchAPI/api/data/SearchCKYC';
 
@@ -43,4 +44,22 @@ exports.searchCKYC = async (leadData) => {
       raw: error.response?.data || null
     };
   }
+};
+
+exports.saveCKYCReport = async (lead_id, kycData, conn = db) => {
+  const { kyc_no, full_name, dob, pan, image, raw } = kycData;
+
+  await conn.query(
+    `INSERT INTO ckyc_reports (lead_id, kyc_no, full_name, dob, pan, image, raw_response)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      lead_id,
+      kyc_no,
+      full_name,
+      dob,
+      pan,
+      image,
+      JSON.stringify(raw)
+    ]
+  );
 };

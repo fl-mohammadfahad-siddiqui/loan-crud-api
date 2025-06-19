@@ -1,4 +1,5 @@
 const axios = require('axios');
+const db = require('../../config/db')
 
 const CIBIL_API_URL = 'https://dqw6uizajg.execute-api.ap-south-1.amazonaws.com/mocks/bureau/cibil';
 
@@ -89,3 +90,22 @@ exports.checkCIBIL = async (leadData) => {
     };
   }
 };
+
+exports.saveCIBILReport = async (lead_id, cibilData, conn = db) => {
+  if (!cibilData.success) return;
+
+  const { score, scoreDate, reasonCodes, raw } = cibilData;
+
+  await conn.query(
+    `INSERT INTO cibil_reports (lead_id, score, score_date, reason_codes, raw_response)
+     VALUES (?, ?, ?, ?, ?)`,
+    [
+      lead_id,
+      score,
+      scoreDate,
+      JSON.stringify(reasonCodes),
+      JSON.stringify(raw)
+    ]
+  );
+};
+    

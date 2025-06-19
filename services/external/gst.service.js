@@ -38,3 +38,46 @@ exports.fetchGSTData = async (pan) => {
     return { success: false, error: err.message };
   }
 };
+
+exports.saveGSTReports = async (lead_id, gstResult, conn = db) => {
+  if (!gstResult.success || !Array.isArray(gstResult.gstDetails)) {
+    console.warn('No GST details found or gstDetails is not an array');
+    return;
+  }
+
+  for (const gst of gstResult.gstDetails) {
+    const {
+      gstin,
+      name,
+      tradename,
+      registrationDate,
+      constitution,
+      status,
+      center,
+      state,
+      nature,
+      pradr
+    } = gst;
+
+    await conn.query(
+      `INSERT INTO gst_reports (
+        lead_id, gstin, taxpayer_name, tradename, registration_date,
+        constitution, status, center, state, nature, address, raw_response
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        lead_id,
+        gstin,
+        name,
+        tradename,
+        registrationDate ? new Date(registrationDate) : null,
+        constitution,
+        status,
+        center,
+        state,
+        JSON.stringify(nature || []),
+        JSON.stringify(pradr || {}),
+        JSON.stringify(gst)
+      ]
+    );
+  }
+};

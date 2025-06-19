@@ -22,79 +22,79 @@ const createFullLead = async (data,files) => {
     );
     const lead_id = leadResult.insertId;
 
-    // Trigger Cibil check
-    const cibilResult = await cibilService.checkCIBIL({
-      first_name,last_name,mobile,pan_card
-    })
+    // // Trigger Cibil check
+    // const cibilResult = await cibilService.checkCIBIL({
+    //   first_name,last_name,mobile,pan_card
+    // })
 
-    if(cibilResult.success){
-      await connection.query(
-        `INSERT INTO cibil_reports (lead_id, score, score_date, reason_codes, raw_response) VALUES (?, ?, ?, ?, ?)`,
-        [ 
-          lead_id,
-          cibilResult.score,
-          cibilResult.scoreDate,
-          JSON.stringify(cibilResult.reasonCodes),
-          JSON.stringify(cibilResult.raw)
-        ]
-      );
-    }
+    // if(cibilResult.success){
+    //   await connection.query(
+    //     `INSERT INTO cibil_reports (lead_id, score, score_date, reason_codes, raw_response) VALUES (?, ?, ?, ?, ?)`,
+    //     [ 
+    //       lead_id,
+    //       cibilResult.score,
+    //       cibilResult.scoreDate,
+    //       JSON.stringify(cibilResult.reasonCodes),
+    //       JSON.stringify(cibilResult.raw)
+    //     ]
+    //   );
+    // }
 
-    //ckyc
-    const ckycResult = await ckycService.searchCKYC({ first_name, last_name, mobile, pan_card });
+    // //ckyc
+    // const ckycResult = await ckycService.searchCKYC({ first_name, last_name, mobile, pan_card });
 
-    if (ckycResult.success) {
-      await connection.query(
-        `INSERT INTO ckyc_reports (lead_id, kyc_no, full_name, dob, pan, image, raw_response) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          lead_id,
-          ckycResult.kyc_no,
-          ckycResult.full_name,
-          ckycResult.dob ? new Date(ckycResult.dob) : null,
-          ckycResult.pan,
-          ckycResult.image,
-          JSON.stringify(ckycResult.raw)
-        ]
-      );
-    }
+    // if (ckycResult.success) {
+    //   await connection.query(
+    //     `INSERT INTO ckyc_reports (lead_id, kyc_no, full_name, dob, pan, image, raw_response) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    //     [
+    //       lead_id,
+    //       ckycResult.kyc_no,
+    //       ckycResult.full_name,
+    //       ckycResult.dob ? new Date(ckycResult.dob) : null,
+    //       ckycResult.pan,
+    //       ckycResult.image,
+    //       JSON.stringify(ckycResult.raw)
+    //     ]
+    //   );
+    // }
 
-    // gst
-    const gstResult = await gstService.fetchGSTData(pan_card);
+    // // gst
+    // const gstResult = await gstService.fetchGSTData(pan_card);
 
-    if (gstResult.success) {
-      for (const gst of gstResult.gstDetails) {
-        const {
-          gstin,
-          name,
-          tradename,
-          registrationDate,
-          constitution,
-          status,
-          center,
-          state,
-          nature,
-          pradr
-        } = gst;
+    // if (gstResult.success) {
+    //   for (const gst of gstResult.gstDetails) {
+    //     const {
+    //       gstin,
+    //       name,
+    //       tradename,
+    //       registrationDate,
+    //       constitution,
+    //       status,
+    //       center,
+    //       state,
+    //       nature,
+    //       pradr
+    //     } = gst;
 
-        await connection.query(
-          `INSERT INTO gst_reports (lead_id, gstin, taxpayer_name, tradename, registration_date, constitution, status, center, state, nature, address, raw_response) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            lead_id,
-            gstin,
-            name,
-            tradename,
-            registrationDate ? new Date(registrationDate) : null,
-            constitution,
-            status,
-            center,
-            state,
-            JSON.stringify(nature || []),
-            JSON.stringify(pradr || {}),
-            JSON.stringify(gst)
-          ]
-        );
-      }
-    }
+    //     await connection.query(
+    //       `INSERT INTO gst_reports (lead_id, gstin, taxpayer_name, tradename, registration_date, constitution, status, center, state, nature, address, raw_response) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    //       [
+    //         lead_id,
+    //         gstin,
+    //         name,
+    //         tradename,
+    //         registrationDate ? new Date(registrationDate) : null,
+    //         constitution,
+    //         status,
+    //         center,
+    //         state,
+    //         JSON.stringify(nature || []),
+    //         JSON.stringify(pradr || {}),
+    //         JSON.stringify(gst)
+    //       ]
+    //     );
+    //   }
+    // }
 
 
     // 2. Insert guarantor
@@ -182,7 +182,29 @@ const getLeadById = async (lead_id) =>{
     return rows[0] || null;
 }
 
+const createLead = async (data) => {
+  const { first_name, last_name, mobile, pan_card, amount, type } = data;
+
+  const [result] = await db.query(
+    `INSERT INTO leads (first_name, last_name, mobile, pan_card, amount, type) VALUES (?, ?, ?, ?, ?, ?)`,
+    [first_name, last_name, mobile, pan_card, amount, type]
+  );
+
+  const lead_id = result.insertId;
+
+  return {
+    lead_id,
+    first_name,
+    last_name,
+    mobile,
+    pan_card,
+    amount,
+    type
+  };
+};
+
 module.exports = {
+  createLead,
   createFullLead,
   getFullLeadById,
   getLeadById

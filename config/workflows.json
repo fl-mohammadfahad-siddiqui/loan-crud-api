@@ -1,0 +1,27 @@
+{
+  "standard_flow": [
+    "lead",
+    "business",
+    "cibil",
+    "kyc",
+    "gst",
+    "loan",
+    "documents"
+  ],
+  "minimal_flow": [
+    "lead",
+    "loan"
+  ],
+  "alternate_flow": [
+    "lead",
+    "cibil",
+    "business",
+    "gst",
+    "loan"
+  ],
+  "fast_track_flow": [
+    "lead",
+    "cibil",
+    "loan"
+  ]
+}
